@@ -1,9 +1,19 @@
-import { Types } from 'mongoose';
+import { Hotel } from '../schemas/hotel.schema';
 
-export interface IHotel {
-  _id: Types.ObjectId;
+export interface SearchHotelParams {
+  limit: number;
+  offset: number;
   title: string;
-  description?: string;
-  createdAt: Date;
-  updatedAt: Date;
+}
+
+export interface UpdateHotelParams {
+  title: string;
+  description: string;
+}
+
+export interface IHotelService {
+  create(data: any): Promise<Hotel>;
+  findById(id: string): Promise<Hotel>;
+  search(params: SearchHotelParams): Promise<Hotel[]>;
+  update(id: string, data: UpdateHotelParams): Promise<Hotel>;
 }

@@ -3,9 +3,8 @@ import { MongooseModule } from '@nestjs/mongoose';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
 import { UsersModule } from './users/users.module';
-import { HotelsController } from './hotels/hotels.controller';
 import { HotelsModule } from './hotels/hotels.module';
-import { BookingsModule } from './bookings/bookings.module';
+import { ReservationsModule } from './reservations/reservations.module';
 import { SupportModule } from './support/support.module';
 
 @Module({
@@ -13,10 +12,10 @@ import { SupportModule } from './support/support.module';
     MongooseModule.forRoot(''),
     UsersModule,
     HotelsModule,
-    BookingsModule,
+    ReservationsModule,
     SupportModule,
   ],
-  controllers: [AppController, HotelsController],
+  controllers: [AppController],
   providers: [AppService],
 })
 export class AppModule {}

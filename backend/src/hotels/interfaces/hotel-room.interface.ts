@@ -1,11 +1,15 @@
-import { Types } from 'mongoose';
+import { HotelRoom } from '../schemas/hotel-room.schema';
 
-export interface IHotelRoom {
-  _id: Types.ObjectId;
-  hotel: Types.ObjectId;
-  description?: string;
-  images: string[];
-  createdAt: Date;
-  updatedAt: Date;
-  isEnabled: boolean;
+export interface SearchRoomsParams {
+  limit: number;
+  offset: number;
+  hotel: string;
+  isEnabled?: boolean;
+}
+
+export interface IHotelRoomService {
+  create(data: Partial<HotelRoom>): Promise<HotelRoom>;
+  findById(id: string): Promise<HotelRoom | null>;
+  search(params: SearchRoomsParams): Promise<HotelRoom[]>;
+  update(id: string, data: Partial<HotelRoom>): Promise<HotelRoom | null>;
 }

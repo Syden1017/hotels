@@ -1,28 +1,24 @@
 import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
-import { Document, Types } from 'mongoose';
-import { Hotel } from './hotel.schema';
+import { Document } from 'mongoose';
 
 @Schema({ timestamps: true })
 export class HotelRoom extends Document {
-  @Prop({ type: Types.ObjectId, required: true, unique: true, auto: true })
-  _id: Types.ObjectId;
-
-  @Prop({ type: Types.ObjectId, ref: Hotel.name, required: true })
-  hotel: Types.ObjectId | Hotel;
+  @Prop({ required: true })
+  hotel: string;
 
   @Prop()
   description?: string;
 
-  @Prop({ type: [String], default: [] })
-  images?: string[];
+  @Prop({ default: [] })
+  images: string[];
 
-  @Prop({ type: Date, required: true, default: () => new Date() })
+  @Prop({ required: true })
   createdAt: Date;
 
-  @Prop({ type: Date, required: true, default: () => new Date() })
+  @Prop({ required: true })
   updatedAt: Date;
 
-  @Prop({ type: Boolean, required: true, default: true })
+  @Prop({ required: true, default: true })
   isEnabled: boolean;
 }
 

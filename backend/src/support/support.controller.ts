@@ -1,25 +1,62 @@
-import { Controller, Post, Body, Get } from '@nestjs/common';
-import { SupportService } from './support.service';
+import {
+  Controller,
+  Post,
+  Get,
+  Param,
+  Body,
+  NotFoundException,
+} from '@nestjs/common';
+import {
+  SupportRequestClientService,
+  SupportRequestEmployeeService,
+} from './support.service';
+import {
+  CreateSupportRequestDto,
+  SendMessageDto,
+  MarkMessagesAsReadDto,
+} from './dto/support.dto';
 
-@Controller('support')
-export class SupportController {
-  constructor(private readonly supportService: SupportService) {}
+@Controller('support-requests')
+export class SupportRequestController {
+  constructor(
+    private readonly clientService: SupportRequestClientService,
+    private readonly employeeService: SupportRequestEmployeeService,
+  ) {}
 
-  @Post('message')
-  async sendMessage(@Body() body: { userId: string; content: string }) {
-    const message = await this.supportService.sendMessage(
-      body.userId,
-      body.content,
-    );
-    return {
-      id: message._id,
-      content: message.content,
-      timestamp: message.timestamp,
-    };
+  @Post()
+  async createSupportRequest(
+    @Body() createSupportRequestDto: CreateSupportRequestDto,
+  ) {
+    return this.clientService.createSupportRequest(createSupportRequestDto);
   }
 
-  @Get('messages')
-  async getMessages() {
-    return this.supportService.getMessages();
+  @Get(':id/messages')
+  async getMessages(@Param('id') supportRequestId: string) {
+    const messages = await this.clientService.getMessages(supportRequestId);
+    if (!messages) {
+      throw new NotFoundException(
+        `Messages for support request with ID ${supportRequestId} not found.`,
+      );
+    }
+    return messages;
+  }
+
+  @Post(':id/messages')
+  async sendMessage(
+    @Param('id') supportRequestId: string,
+    @Body() sendMessageDto: SendMessageDto,
+  ) {
+    sendMessageDto.supportRequest = supportRequestId;
+    const result = await this.clientService.sendMessage(sendMessageDto);
+    return result;
+  }
+
+  @Post(':id/read')
+  async markMessagesAsRead(
+    @Param('id') supportRequestId: string,
+    @Body() markMessagesAsReadDto: MarkMessagesAsReadDto,
+  ) {
+    markMessagesAsReadDto.supportRequest = supportRequestId;
+    await this.employeeService.markMessagesAsRead(markMessagesAsReadDto);
   }
 }

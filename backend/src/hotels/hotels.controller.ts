@@ -1,50 +1,52 @@
-import { Body, Controller, Get, Param, Patch, Post } from '@nestjs/common';
+import {
+  Controller,
+  Get,
+  Post,
+  Put,
+  Param,
+  Query,
+  Body,
+  ParseIntPipe,
+  DefaultValuePipe,
+  UseGuards,
+} from '@nestjs/common';
 import { HotelsService } from './hotels.service';
-import { CreateHotelDto } from './dto/create-hotel.dto';
-import { CreateHotelRoomDto } from './dto/create-hotel-room.dto';
+import {
+  UpdateHotelParams,
+  SearchHotelParams,
+} from './interfaces/hotel.interface';
+import { AuthGuard } from '@nestjs/passport';
 
-@Controller('hotels')
+@Controller('api/common/hotels')
 export class HotelsController {
-  constructor(private readonly hotelsService: HotelsService) {}
+  constructor(private readonly hotelService: HotelsService) {}
 
-  @Get()
-  async getAllHotels() {
-    return this.hotelsService.findAllHotels();
-  }
-
-  @Get(':id')
-  async getHotelById(@Param('id') id: string) {
-    return this.hotelsService.findHotelById(id);
-  }
-
+  @UseGuards(AuthGuard('jwt'))
   @Post()
-  async createHotel(@Body() createHotelDto: CreateHotelDto) {
-    const { title, createdAt, updatedAt } = createHotelDto;
-    return this.hotelsService.createHotel(title, createdAt, updatedAt);
+  create(@Body() data: any) {
+    return this.hotelService.create(data);
   }
 
-  @Post(':hotelId/rooms')
-  async createRoom(
-    @Param('hotelId') hotelId: string,
-    @Body() createRoomDto: CreateHotelRoomDto,
+  @UseGuards(AuthGuard('jwt'))
+  @Get(':id')
+  async findById(@Param('id') id: string) {
+    return this.hotelService.findById(id);
+  }
+
+  @UseGuards(AuthGuard('jwt'))
+  @Get()
+  async search(
+    @Query('limit', new DefaultValuePipe(10), ParseIntPipe) limit: number,
+    @Query('offset', new DefaultValuePipe(0), ParseIntPipe) offset: number,
+    @Query('title', new DefaultValuePipe('')) title: string,
   ) {
-    const { description, images, createdAt, updatedAt } = createRoomDto;
-    return this.hotelsService.createHotelRoom(
-      hotelId,
-      createdAt,
-      updatedAt,
-      images,
-      description,
-    );
+    const params: SearchHotelParams = { limit, offset, title };
+    return this.hotelService.search(params);
   }
 
-  @Patch('rooms/:roomId/enable')
-  async enableRoom(@Param('roomId') roomId: string) {
-    return this.hotelsService.enableRoom(roomId);
-  }
-
-  @Patch('rooms/:roomId/disable')
-  async disableRoom(@Param('roomId') roomId: string) {
-    return this.hotelsService.disableRoom(roomId);
+  @UseGuards(AuthGuard('jwt'))
+  @Put(':id')
+  async update(@Param('id') id: string, @Body() data: UpdateHotelParams) {
+    return this.hotelService.update(id, data);
   }
 }

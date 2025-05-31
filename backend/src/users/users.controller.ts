@@ -1,4 +1,13 @@
-import { Controller, Post, Body, Get, Query, Param } from '@nestjs/common';
+import {
+  Controller,
+  Post,
+  Body,
+  Get,
+  Query,
+  Param,
+  HttpException,
+  HttpStatus,
+} from '@nestjs/common';
 import { UsersService } from './users.service';
 import { User } from './schemas/user.schema';
 import { SearchUserParams } from './interfaces/user.interface';
@@ -14,7 +23,11 @@ export class UsersController {
 
   @Get(':id')
   async findById(@Param('id') id: string): Promise<User | null> {
-    return this.userService.findById(id);
+    try {
+      return this.userService.findById(id);
+    } catch (error: any) {
+      throw new HttpException(error.message, HttpStatus.NOT_FOUND);
+    }
   }
 
   @Get()

@@ -1,6 +1,13 @@
+import { IsString, IsNotEmpty } from 'class-validator';
+
 export class CreateHotelRoomDto {
-  createdAt: Date;
-  updatedAt: Date;
-  description?: string;
+  @IsString()
+  @IsNotEmpty()
+  description: string;
+
+  @IsString()
+  @IsNotEmpty()
+  hotelId: string;
+
   images?: string[];
 }
