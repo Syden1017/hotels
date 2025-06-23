@@ -1,15 +1,27 @@
 import { Injectable } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
-import { User } from './schemas/user.schema';
-import { IUserService, SearchUserParams } from './interfaces/user.interface';
+import * as bcrypt from 'bcrypt';
+import { User, UserDocument, UserRole } from './schemas/user.schema';
+import { SearchUserParams, IUserService } from './interfaces/user.interface';
+import { CreateUserDto } from './dto/create-user.dto';
 
 @Injectable()
 export class UsersService implements IUserService {
-  constructor(@InjectModel(User.name) private userModel: Model<User>) {}
+  constructor(@InjectModel(User.name) private userModel: Model<UserDocument>) {}
 
-  async create(data: Partial<User>): Promise<User> {
-    const createdUser = new this.userModel(data);
+  async create(createUserDto: CreateUserDto): Promise<User> {
+    const salt = await bcrypt.genSalt(10);
+    const passwordHash = await bcrypt.hash(createUserDto.password, salt);
+
+    const createdUser = new this.userModel({
+      email: createUserDto.email,
+      name: createUserDto.name,
+      contactPhone: createUserDto.contactPhone,
+      passwordHash,
+      role: createUserDto.role || UserRole.Client,
+    });
+
     return createdUser.save();
   }
 
@@ -28,11 +40,9 @@ export class UsersService implements IUserService {
     if (email) {
       query.email = { $regex: email, $options: 'i' };
     }
-
     if (name) {
       query.name = { $regex: name, $options: 'i' };
     }
-
     if (contactPhone) {
       query.contactPhone = { $regex: contactPhone, $options: 'i' };
     }

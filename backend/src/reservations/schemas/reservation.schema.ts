@@ -1,16 +1,16 @@
 import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
-import { Document } from 'mongoose';
+import { Types } from 'mongoose';
 
 @Schema({ timestamps: true })
-export class Reservations extends Document {
+export class Reservation {
   @Prop({ required: true })
-  userId: string;
+  userId: Types.ObjectId;
 
   @Prop({ required: true })
-  hotelId: string;
+  hotelId: Types.ObjectId;
 
   @Prop({ required: true })
-  roomId: string;
+  roomId: Types.ObjectId;
 
   @Prop({ required: true })
   dateStart: Date;
@@ -19,4 +19,4 @@ export class Reservations extends Document {
   dateEnd: Date;
 }
 
-export const ReservationSchema = SchemaFactory.createForClass(Reservations);
+export const ReservationSchema = SchemaFactory.createForClass(Reservation);

@@ -1,44 +1,77 @@
-import { Injectable } from '@nestjs/common';
+import {
+  Injectable,
+  BadRequestException,
+  NotFoundException,
+} from '@nestjs/common';
+import { InjectModel } from '@nestjs/mongoose';
+import { Model, Types } from 'mongoose';
+import { Reservation } from './schemas/reservation.schema';
 import {
   IReservation,
+  ReservationDto,
   ReservationSearchOptions,
-} from './interfaces/reservations.interface';
-import { Reservations } from './schemas/reservations.schema';
-import { InjectModel } from '@nestjs/mongoose';
-import { ReservationDto } from './dto/reservations.dto';
-import { Model } from 'mongoose';
+} from './interfaces/reservation.interface';
 
 @Injectable()
-export class ReservationsService implements IReservation {
+export class ReservationService implements IReservation {
   constructor(
-    @InjectModel(Reservations.name)
-    private reservationModel: Model<Reservations>,
+    @InjectModel(Reservation.name)
+    private reservationModel: Model<Reservation>,
   ) {}
 
-  async addReservation(data: ReservationDto): Promise<Reservations> {
-    const existingReservations = await this.reservationModel.find({
-      roomId: data.roomId,
-      $or: [
-        { dateStart: { $lt: data.dateEnd, $gte: data.dateStart } },
-        { dateEnd: { $gt: data.dateStart, $lte: data.dateEnd } },
-      ],
-    });
+  async addReservation(data: ReservationDto): Promise<Reservation> {
+    const isAvailable = await this.isRoomAvailable(
+      data.roomId,
+      data.dateStart,
+      data.dateEnd,
+    );
 
-    if (existingReservations.length > 0) {
-      throw new Error('Room is not available for the selected dates');
+    if (!isAvailable) {
+      throw new BadRequestException('Номер недоступен на выбранные даты');
     }
 
-    const newReservation = new this.reservationModel(data);
-    return newReservation.save();
+    const reservation = new this.reservationModel(data);
+    return reservation.save();
   }
 
-  async removeReservation(id: string): Promise<void> {
-    await this.reservationModel.findByIdAndDelete(id);
+  async removeReservation(id: Types.ObjectId): Promise<void> {
+    await this.reservationModel.findByIdAndDelete(id).exec();
   }
 
   async getReservations(
     filter: ReservationSearchOptions,
-  ): Promise<Array<Reservations>> {
-    return this.reservationModel.find(filter).exec();
+  ): Promise<Reservation[]> {
+    const query: any = { userId: filter.userId };
+
+    if (filter.dateStart && filter.dateEnd) {
+      query.dateStart = { $lte: filter.dateEnd };
+      query.dateEnd = { $gte: filter.dateStart };
+    }
+
+    return this.reservationModel.find(query).exec();
+  }
+
+  async getReservationById(id: Types.ObjectId): Promise<Reservation> {
+    const reservation = await this.reservationModel.findById(id).exec();
+    if (!reservation) {
+      throw new NotFoundException('Бронирование не найдено');
+    }
+    return reservation;
+  }
+
+  private async isRoomAvailable(
+    roomId: Types.ObjectId,
+    dateStart: Date,
+    dateEnd: Date,
+  ): Promise<boolean> {
+    const overlappingReservations = await this.reservationModel
+      .find({
+        roomId,
+        dateStart: { $lt: dateEnd },
+        dateEnd: { $gt: dateStart },
+      })
+      .exec();
+
+    return overlappingReservations.length === 0;
   }
 }

@@ -1,17 +1,23 @@
 import { Module } from '@nestjs/common';
 import { MongooseModule } from '@nestjs/mongoose';
-import { Reservations, ReservationSchema } from './schemas/reservations.schema';
-import { ReservationsService } from './reservations.service';
-import { ReservationsController } from './reservations.controller';
+import { ReservationController } from './reservations.controller';
+import { ClientReservationController } from './client-reservation.controller';
+import { ManagerReservationController } from './manager-reservation.controller';
+import { ReservationService } from './reservations.service';
+import { Reservation, ReservationSchema } from './schemas/reservation.schema';
 
 @Module({
   imports: [
     MongooseModule.forFeature([
-      { name: Reservations.name, schema: ReservationSchema },
+      { name: Reservation.name, schema: ReservationSchema },
     ]),
   ],
-  providers: [ReservationsService],
-  controllers: [ReservationsController],
-  exports: [ReservationsService],
+  controllers: [
+    ReservationController,
+    ClientReservationController,
+    ManagerReservationController,
+  ],
+  providers: [ReservationService],
+  exports: [ReservationService],
 })
-export class ReservationsModule {}
+export class ReservationModule {}

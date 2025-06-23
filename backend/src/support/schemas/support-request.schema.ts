@@ -1,11 +1,11 @@
 import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
 import { Message } from './message.schema';
-import { Document } from 'mongoose';
+import { Types } from 'mongoose';
 
 @Schema()
-export class SupportRequest extends Document {
+export class SupportRequest {
   @Prop({ required: true })
-  user: string;
+  user: Types.ObjectId;
 
   @Prop({ required: true })
   createdAt: Date;

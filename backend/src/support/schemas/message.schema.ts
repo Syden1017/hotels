@@ -1,11 +1,12 @@
 import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
+import { Types } from 'mongoose';
 
-@Schema({ timestamps: true })
+@Schema()
 export class Message {
   @Prop({ required: true })
-  author: string;
+  author: Types.ObjectId;
 
-  @Prop({ required: true })
+  @Prop({ required: true, default: Date.now })
   sentAt: Date;
 
   @Prop({ required: true })

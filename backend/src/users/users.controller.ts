@@ -1,37 +1,40 @@
 import {
   Controller,
+  Get,
   Post,
   Body,
-  Get,
-  Query,
   Param,
-  HttpException,
-  HttpStatus,
+  Query,
+  UseGuards,
 } from '@nestjs/common';
 import { UsersService } from './users.service';
-import { User } from './schemas/user.schema';
+import { CreateUserDto } from './dto/create-user.dto';
 import { SearchUserParams } from './interfaces/user.interface';
+import { JwtAuthGuard } from '../auth/jwt-auth.guard';
+import { Roles } from '../auth/roles.decorator';
+import { RolesGuard } from '../auth/roles.guard';
+import { UserRole } from './schemas/user.schema';
 
 @Controller('users')
 export class UsersController {
-  constructor(private readonly userService: UsersService) {}
+  constructor(private readonly usersService: UsersService) {}
 
   @Post()
-  async create(@Body() userData: Partial<User>): Promise<User> {
-    return this.userService.create(userData);
-  }
-
-  @Get(':id')
-  async findById(@Param('id') id: string): Promise<User | null> {
-    try {
-      return this.userService.findById(id);
-    } catch (error: any) {
-      throw new HttpException(error.message, HttpStatus.NOT_FOUND);
-    }
+  async create(@Body() createUserDto: CreateUserDto) {
+    return this.usersService.create(createUserDto);
   }
 
   @Get()
-  async findAll(@Query() params: SearchUserParams): Promise<User[]> {
-    return this.userService.findAll(params);
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(UserRole.Admin)
+  async findAll(@Query() params: SearchUserParams) {
+    return this.usersService.findAll(params);
+  }
+
+  @Get(':id')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(UserRole.Admin, UserRole.Manager)
+  async findById(@Param('id') id: string) {
+    return this.usersService.findById(id);
   }
 }

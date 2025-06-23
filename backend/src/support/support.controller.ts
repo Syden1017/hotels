@@ -1,62 +1,92 @@
 import {
   Controller,
-  Post,
   Get,
-  Param,
+  Post,
   Body,
-  NotFoundException,
+  Param,
+  Query,
+  UseGuards,
 } from '@nestjs/common';
+import { SupportRequestService } from './support-request.service';
+import { SupportRequestClientService } from './support-request-client.service';
+import { SupportRequestEmployeeService } from './support-request-employee.service';
+import { JwtAuthGuard } from '../auth/jwt-auth.guard';
+import { Roles } from '../auth/roles.decorator';
+import { RolesGuard } from '../auth/roles.guard';
+import { UserRole } from '../users/user-role.enum';
 import {
-  SupportRequestClientService,
-  SupportRequestEmployeeService,
-} from './support.service';
-import {
+  GetChatListParams,
   CreateSupportRequestDto,
   SendMessageDto,
   MarkMessagesAsReadDto,
-} from './dto/support.dto';
+} from './interfaces/support.interface';
 
-@Controller('support-requests')
-export class SupportRequestController {
+@Controller('support')
+export class SupportController {
   constructor(
-    private readonly clientService: SupportRequestClientService,
-    private readonly employeeService: SupportRequestEmployeeService,
+    private supportRequestService: SupportRequestService,
+    private supportRequestClientService: SupportRequestClientService,
+    private supportRequestEmployeeService: SupportRequestEmployeeService,
   ) {}
 
-  @Post()
-  async createSupportRequest(
-    @Body() createSupportRequestDto: CreateSupportRequestDto,
-  ) {
-    return this.clientService.createSupportRequest(createSupportRequestDto);
+  @Get()
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(UserRole.Admin, UserRole.Manager)
+  async getSupportRequests(@Query() params: GetChatListParams) {
+    return this.supportRequestService.findSupportRequests(params);
   }
 
-  @Get(':id/messages')
-  async getMessages(@Param('id') supportRequestId: string) {
-    const messages = await this.clientService.getMessages(supportRequestId);
-    if (!messages) {
-      throw new NotFoundException(
-        `Messages for support request with ID ${supportRequestId} not found.`,
-      );
-    }
-    return messages;
+  @Post()
+  @UseGuards(JwtAuthGuard)
+  async createSupportRequest(@Body() data: CreateSupportRequestDto) {
+    return this.supportRequestClientService.createSupportRequest(data);
   }
 
   @Post(':id/messages')
-  async sendMessage(
-    @Param('id') supportRequestId: string,
-    @Body() sendMessageDto: SendMessageDto,
-  ) {
-    sendMessageDto.supportRequest = supportRequestId;
-    const result = await this.clientService.sendMessage(sendMessageDto);
-    return result;
+  @UseGuards(JwtAuthGuard)
+  async sendMessage(@Param('id') id: string, @Body() data: SendMessageDto) {
+    return this.supportRequestService.sendMessage({
+      ...data,
+      supportRequest: id,
+    });
   }
 
-  @Post(':id/read')
+  @Get(':id/messages')
+  @UseGuards(JwtAuthGuard)
+  async getMessages(@Param('id') id: string) {
+    return this.supportRequestService.getMessages(id);
+  }
+
+  @Post(':id/messages/read')
+  @UseGuards(JwtAuthGuard)
   async markMessagesAsRead(
-    @Param('id') supportRequestId: string,
-    @Body() markMessagesAsReadDto: MarkMessagesAsReadDto,
+    @Param('id') id: string,
+    @Body() data: MarkMessagesAsReadDto,
   ) {
-    markMessagesAsReadDto.supportRequest = supportRequestId;
-    await this.employeeService.markMessagesAsRead(markMessagesAsReadDto);
+    if (data.user) {
+      return this.supportRequestClientService.markMessagesAsRead({
+        ...data,
+        supportRequest: id,
+      });
+    }
+  }
+
+  @Get(':id/unread-count')
+  @UseGuards(JwtAuthGuard)
+  async getUnreadCount(
+    @Param('id') id: string,
+    @Query('userId') userId: string,
+  ) {
+    if (userId) {
+      return this.supportRequestClientService.getUnreadCount(id);
+    }
+    return this.supportRequestEmployeeService.getUnreadCount(id);
+  }
+
+  @Post(':id/close')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(UserRole.Admin, UserRole.Manager)
+  async closeRequest(@Param('id') id: string) {
+    return this.supportRequestEmployeeService.closeRequest(id);
   }
 }

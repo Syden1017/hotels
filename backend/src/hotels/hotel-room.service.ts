@@ -1,11 +1,11 @@
 import { Injectable } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
-import { Model } from 'mongoose';
+import { Model, Types } from 'mongoose';
 import { HotelRoom } from './schemas/hotel-room.schema';
 import {
   IHotelRoomService,
   SearchRoomsParams,
-} from './interfaces/hotel-room.interface';
+} from './interfaces/hotel.interface';
 
 @Injectable()
 export class HotelRoomService implements IHotelRoomService {
@@ -14,11 +14,11 @@ export class HotelRoomService implements IHotelRoomService {
   ) {}
 
   async create(data: Partial<HotelRoom>): Promise<HotelRoom> {
-    const hotelRoom = new this.hotelRoomModel(data);
-    return hotelRoom.save();
+    const room = new this.hotelRoomModel(data);
+    return room.save();
   }
 
-  async findById(id: string): Promise<HotelRoom | null> {
+  async findById(id: Types.ObjectId): Promise<HotelRoom | null> {
     return this.hotelRoomModel.findById(id).exec();
   }
 
@@ -34,7 +34,7 @@ export class HotelRoomService implements IHotelRoomService {
   }
 
   async update(
-    id: string,
+    id: Types.ObjectId,
     data: Partial<HotelRoom>,
   ): Promise<HotelRoom | null> {
     return this.hotelRoomModel
